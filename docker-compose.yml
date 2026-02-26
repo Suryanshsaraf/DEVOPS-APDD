@@ -1,0 +1,82 @@
+# ──────────────────────────────────────────────────
+# Docker Compose – Local Development Stack
+# ──────────────────────────────────────────────────
+# Services:
+#   1. ml-api        – FastAPI prediction service
+#   2. prometheus     – Metrics collection
+#   3. grafana        – Metrics dashboard
+# ──────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+  # ── ML Prediction API ──────────────────────────
+  ml-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ml-prediction-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=ML Prediction API
+      - APP_VERSION=1.0.0
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - DEBUG=false
+    volumes:
+      - ./models:/app/models
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ml-network
+
+  # ── Prometheus ─────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert-rules.yaml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    restart: unless-stopped
+    networks:
+      - ml-network
+
+  # ── Grafana ────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - ml-network
+
+# ── Volumes ──────────────────────────────────────
+volumes:
+  prometheus-data:
+  grafana-data:
+
+    # ── Networks ─────────────────────────────────────
+networks:
+  ml-network:
+    driver: bridge

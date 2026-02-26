@@ -1,0 +1,80 @@
+# ──────────────────────────────────────────────────
+# Prometheus Alert Rules – ML Prediction API
+# ──────────────────────────────────────────────────
+
+groups:
+  - name: ml-prediction-api-alerts
+    rules:
+      # ── High Error Rate Alert ──────────────────
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(api_request_total{status=~"5.."}[5m]))
+            /
+            sum(rate(api_request_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: ml-prediction-api
+        annotations:
+          summary: "High error rate detected"
+          description: >
+            Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            This exceeds the 5% threshold.
+
+      # ── High Latency Alert ────────────────────
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(api_request_latency_seconds_bucket[5m])) by (le)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          service: ml-prediction-api
+        annotations:
+          summary: "High API latency detected"
+          description: >
+            95th percentile latency is {{ $value }}s over the last 5 minutes.
+            This exceeds the 1.0s threshold.
+
+      # ── API Down Alert ────────────────────────
+      - alert: APIDown
+        expr: up{job="ml-prediction-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: ml-prediction-api
+        annotations:
+          summary: "ML Prediction API is down"
+          description: >
+            The ML Prediction API target has been unreachable for more than 2 minutes.
+
+      # ── High Memory Usage ─────────────────────
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="ml-prediction-api"}
+          > 512 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+          service: ml-prediction-api
+        annotations:
+          summary: "High memory usage in ML Prediction API"
+          description: >
+            Memory usage is {{ $value | humanize1024 }}B, exceeding the 512MB threshold.
+
+      # ── No Predictions Alert ──────────────────
+      - alert: NoPredictions
+        expr: |
+          sum(rate(prediction_total[30m])) == 0
+        for: 30m
+        labels:
+          severity: info
+          service: ml-prediction-api
+        annotations:
+          summary: "No predictions in the last 30 minutes"
+          description: >
+            The API has not processed any prediction requests in the last 30 minutes.
+            This may indicate no traffic or a potential issue.

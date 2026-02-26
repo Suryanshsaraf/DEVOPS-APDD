@@ -1,0 +1,21 @@
+# ──────────────────────────────────────────────────
+# Kubernetes Service – ML Prediction API
+# ──────────────────────────────────────────────────
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-prediction-api
+  namespace: ml-production
+  labels:
+    app: ml-prediction-api
+    environment: production
+spec:
+  type: LoadBalancer
+  selector:
+    app: ml-prediction-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000

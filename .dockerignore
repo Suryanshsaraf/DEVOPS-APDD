@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────
+# Docker Ignore – keep image lean
+# ──────────────────────────────────────────
+
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+
+# Virtual environments
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# CI/CD & IaC
+Jenkinsfile
+terraform/
+k8s/
+monitoring/
+.github/
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Environment files
+.env
+.env.*
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+
+# Tests (not needed in production image)
+tests/
+
+# Data (not needed – model is pre-built)
+data/

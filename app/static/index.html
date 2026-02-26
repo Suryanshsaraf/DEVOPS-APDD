@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Prediction API – Heart Disease Prediction Dashboard</title>
+    <meta name="description" content="Production-grade Heart Disease Prediction Dashboard powered by Machine Learning">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ANIMATED BACKGROUND                         -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- NAVBAR                                      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <div class="nav-logo">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="12" stroke="url(#grad1)" stroke-width="2.5"/>
+                    <path d="M10 14L13 17L19 11" stroke="url(#grad1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs><linearGradient id="grad1" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
+                </svg>
+            </div>
+            <span class="nav-title">ML Prediction API</span>
+            <span class="nav-version">v1.0.0</span>
+        </div>
+        <div class="nav-links">
+            <a href="#dashboard" class="nav-link active" data-section="dashboard">Dashboard</a>
+            <a href="#predict" class="nav-link" data-section="predict">Predict</a>
+            <a href="#monitor" class="nav-link" data-section="monitor">Monitor</a>
+            <a href="/docs" class="nav-link" target="_blank">API Docs ↗</a>
+        </div>
+        <div class="nav-status">
+            <div class="status-dot" id="status-dot"></div>
+            <span class="status-text" id="status-text">Checking...</span>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- MAIN CONTENT                                -->
+    <!-- ═══════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <!-- ── SECTION: Dashboard ────────────────── -->
+        <section id="dashboard" class="section active">
+            <!-- Hero -->
+            <div class="hero">
+                <div class="hero-badge">🫀 Heart Disease Prediction</div>
+                <h1 class="hero-title">ML Prediction <span class="gradient-text">Dashboard</span></h1>
+                <p class="hero-subtitle">Production-grade machine learning API with complete DevOps pipeline — Docker, Kubernetes, Jenkins CI/CD, Terraform, and Prometheus monitoring.</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" id="stat-status">
+                    <div class="stat-icon stat-icon-green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">API Status</span>
+                        <span class="stat-value" id="stat-api-status">--</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-model">
+                    <div class="stat-icon stat-icon-purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Model Status</span>
+                        <span class="stat-value" id="stat-model-status">--</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-predictions">
+                    <div class="stat-icon stat-icon-blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Predictions Made</span>
+                        <span class="stat-value" id="stat-pred-count">0</span>
+                    </div>
+                </div>
+                <div class="stat-card" id="stat-version">
+                    <div class="stat-icon stat-icon-amber">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">API Version</span>
+                        <span class="stat-value" id="stat-version-val">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architecture + Quick Actions -->
+            <div class="dashboard-grid">
+                <div class="card architecture-card">
+                    <h3 class="card-title">⚙️ Architecture Pipeline</h3>
+                    <div class="pipeline">
+                        <div class="pipeline-step"><div class="pipeline-icon">📦</div><span>GitHub</span></div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-step"><div class="pipeline-icon">🔧</div><span>Jenkins</span></div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-step"><div class="pipeline-icon">🐳</div><span>Docker</span></div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-step"><div class="pipeline-icon">☸️</div><span>Kubernetes</span></div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-step"><div class="pipeline-icon">📊</div><span>Monitoring</span></div>
+                    </div>
+                    <div class="pipeline-sub">
+                        <div class="pipeline-badge">Terraform IaC</div>
+                        <div class="pipeline-badge">Prometheus</div>
+                        <div class="pipeline-badge">Grafana</div>
+                        <div class="pipeline-badge">HPA Autoscaling</div>
+                    </div>
+                </div>
+
+                <div class="card quick-actions-card">
+                    <h3 class="card-title">🚀 Quick Actions</h3>
+                    <button class="action-btn action-primary" onclick="switchSection('predict')">
+                        <span>Make a Prediction</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                    <button class="action-btn action-secondary" onclick="switchSection('monitor')">
+                        <span>View Metrics</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </button>
+                    <a href="/docs" target="_blank" class="action-btn action-ghost">
+                        <span>Open API Docs</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SECTION: Predict ──────────────────── -->
+        <section id="predict" class="section">
+            <div class="section-header">
+                <h2 class="section-title">🫀 Heart Disease <span class="gradient-text">Prediction</span></h2>
+                <p class="section-desc">Enter the 13 clinical features to get a prediction from our trained RandomForest model.</p>
+            </div>
+
+            <div class="predict-layout">
+                <!-- Input Form -->
+                <div class="card predict-form-card">
+                    <h3 class="card-title">Patient Data</h3>
+                    <form id="predict-form" class="predict-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="age">Age <span class="form-hint">(years)</span></label>
+                                <input type="number" id="age" name="age" value="52" min="0" max="120" step="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sex">Sex</label>
+                                <select id="sex" name="sex" required>
+                                    <option value="1">Male</option>
+                                    <option value="0">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cp">Chest Pain Type</label>
+                                <select id="cp" name="cp" required>
+                                    <option value="0">Typical Angina</option>
+                                    <option value="1">Atypical Angina</option>
+                                    <option value="2">Non-anginal Pain</option>
+                                    <option value="3">Asymptomatic</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="trestbps">Resting BP <span class="form-hint">(mm Hg)</span></label>
+                                <input type="number" id="trestbps" name="trestbps" value="125" min="0" max="300" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="chol">Cholesterol <span class="form-hint">(mg/dl)</span></label>
+                                <input type="number" id="chol" name="chol" value="212" min="0" max="600" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fbs">Fasting Blood Sugar &gt;120</label>
+                                <select id="fbs" name="fbs" required>
+                                    <option value="0">No (&le;120 mg/dl)</option>
+                                    <option value="1">Yes (&gt;120 mg/dl)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="restecg">Resting ECG</label>
+                                <select id="restecg" name="restecg" required>
+                                    <option value="0">Normal</option>
+                                    <option value="1" selected>ST-T Abnormality</option>
+                                    <option value="2">LV Hypertrophy</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="thalach">Max Heart Rate</label>
+                                <input type="number" id="thalach" name="thalach" value="168" min="0" max="300" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="exang">Exercise Angina</label>
+                                <select id="exang" name="exang" required>
+                                    <option value="0" selected>No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="oldpeak">ST Depression <span class="form-hint">(oldpeak)</span></label>
+                                <input type="number" id="oldpeak" name="oldpeak" value="1.0" min="0" max="10" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="slope">ST Slope</label>
+                                <select id="slope" name="slope" required>
+                                    <option value="0">Upsloping</option>
+                                    <option value="1">Flat</option>
+                                    <option value="2" selected>Downsloping</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ca">Major Vessels <span class="form-hint">(0-4)</span></label>
+                                <input type="number" id="ca" name="ca" value="2" min="0" max="4" step="1" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="thal">Thalassemia</label>
+                                <select id="thal" name="thal" required>
+                                    <option value="0">Normal</option>
+                                    <option value="1">Fixed Defect</option>
+                                    <option value="2">Reversible Defect</option>
+                                    <option value="3" selected>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn" id="submit-btn">
+                            <span class="submit-btn-text">Run Prediction</span>
+                            <span class="submit-btn-loading" style="display:none;">
+                                <svg class="spinner" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+                                Analysing...
+                            </span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Result Card -->
+                <div class="card result-card" id="result-card">
+                    <div class="result-placeholder" id="result-placeholder">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        <p>Enter patient data and click<br><strong>"Run Prediction"</strong> to see results.</p>
+                    </div>
+                    <div class="result-content" id="result-content" style="display:none;">
+                        <div class="result-ring-container">
+                            <svg class="result-ring" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="85" stroke="rgba(255,255,255,0.08)" stroke-width="12" fill="none"/>
+                                <circle id="result-ring-progress" cx="100" cy="100" r="85" stroke-width="12" fill="none"
+                                    stroke-dasharray="534" stroke-dashoffset="534" stroke-linecap="round"
+                                    transform="rotate(-90 100 100)"/>
+                            </svg>
+                            <div class="result-ring-text">
+                                <span class="result-probability" id="result-probability">--</span>
+                                <span class="result-probability-label">Confidence</span>
+                            </div>
+                        </div>
+                        <div class="result-diagnosis" id="result-diagnosis">
+                            <!-- Filled by JS -->
+                        </div>
+                        <div class="result-details" id="result-details"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction History -->
+            <div class="card history-card" id="history-card" style="display:none;">
+                <h3 class="card-title">📋 Prediction History</h3>
+                <div class="history-table-wrap">
+                    <table class="history-table">
+                        <thead>
+                            <tr><th>#</th><th>Age</th><th>Sex</th><th>Result</th><th>Probability</th><th>Time</th></tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SECTION: Monitor ──────────────────── -->
+        <section id="monitor" class="section">
+            <div class="section-header">
+                <h2 class="section-title">📊 API <span class="gradient-text">Monitoring</span></h2>
+                <p class="section-desc">Real-time metrics from Prometheus instrumentation.</p>
+            </div>
+
+            <div class="monitor-grid">
+                <div class="card monitor-card">
+                    <div class="monitor-header">
+                        <h3>Total Requests</h3>
+                        <div class="monitor-badge badge-blue">Counter</div>
+                    </div>
+                    <div class="monitor-value" id="monitor-requests">--</div>
+                    <div class="monitor-chart" id="chart-requests"></div>
+                </div>
+                <div class="card monitor-card">
+                    <div class="monitor-header">
+                        <h3>Prediction Count</h3>
+                        <div class="monitor-badge badge-purple">Counter</div>
+                    </div>
+                    <div class="monitor-value" id="monitor-predictions">--</div>
+                    <div class="monitor-chart" id="chart-predictions"></div>
+                </div>
+                <div class="card monitor-card">
+                    <div class="monitor-header">
+                        <h3>Average Latency</h3>
+                        <div class="monitor-badge badge-amber">Histogram</div>
+                    </div>
+                    <div class="monitor-value" id="monitor-latency">--</div>
+                    <div class="monitor-chart" id="chart-latency"></div>
+                </div>
+                <div class="card monitor-card">
+                    <div class="monitor-header">
+                        <h3>Process Memory</h3>
+                        <div class="monitor-badge badge-green">Gauge</div>
+                    </div>
+                    <div class="monitor-value" id="monitor-memory">--</div>
+                    <div class="monitor-chart" id="chart-memory"></div>
+                </div>
+            </div>
+
+            <!-- Raw Metrics -->
+            <div class="card raw-metrics-card">
+                <div class="raw-metrics-header">
+                    <h3 class="card-title">📡 Raw Prometheus Metrics</h3>
+                    <button class="refresh-btn" onclick="fetchMetrics()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Refresh
+                    </button>
+                </div>
+                <pre class="metrics-pre" id="raw-metrics">Loading metrics...</pre>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- FOOTER                                      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <footer class="footer">
+        <p>Built with <span class="footer-heart">❤️</span> using FastAPI · Docker · Kubernetes · Jenkins · Terraform · Prometheus · Grafana</p>
+        <p class="footer-sub">ML Prediction API v1.0.0 — Sunil Saraf</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

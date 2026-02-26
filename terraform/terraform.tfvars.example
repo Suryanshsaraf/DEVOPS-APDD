@@ -1,0 +1,27 @@
+# ──────────────────────────────────────────────────
+# Terraform Variables – Example Values
+# ──────────────────────────────────────────────────
+# Copy this file to terraform.tfvars and fill in
+# your actual values before running terraform apply.
+# NEVER commit terraform.tfvars to version control.
+# ──────────────────────────────────────────────────
+
+# General
+project_name  = "ml-prediction-api"
+environment   = "production"
+aws_region    = "us-east-1"
+
+# Networking
+vpc_cidr     = "10.0.0.0/16"
+allowed_cidr = "0.0.0.0/0"   # Restrict in production!
+
+# EKS Cluster
+kubernetes_version = "1.29"
+node_instance_type = "t3.medium"
+node_desired_size  = 2
+node_min_size      = 1
+node_max_size      = 5
+
+# Jenkins
+jenkins_instance_type = "t3.medium"
+key_pair_name         = "your-aws-key-pair-name"

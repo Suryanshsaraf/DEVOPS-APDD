@@ -1,0 +1,93 @@
+# ──────────────────────────────────────────────────
+# Kubernetes Deployment – ML Prediction API
+# ──────────────────────────────────────────────────
+# 3 replicas, resource limits, liveness/readiness probes
+# ──────────────────────────────────────────────────
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-prediction-api
+  namespace: ml-production
+  labels:
+    app: ml-prediction-api
+    environment: production
+    version: "1.0.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ml-prediction-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: ml-prediction-api
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ml-prediction-api
+          image: your-dockerhub-username/ml-prediction-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+              name: http
+
+          # ── Environment Variables ──────────────
+          env:
+            - name: APP_NAME
+              value: "ML Prediction API"
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: APP_HOST
+              value: "0.0.0.0"
+            - name: APP_PORT
+              value: "8000"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: LOG_FORMAT
+              value: "json"
+            - name: METRICS_ENABLED
+              value: "true"
+
+          # ── Resource Limits ────────────────────
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # ── Liveness Probe ─────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ── Readiness Probe ────────────────────
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+      # ── Pod-level settings ─────────────────────
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
