@@ -2,20 +2,21 @@
 Heart Disease Prediction – Training Pipeline.
 
 Loads the UCI Heart Disease dataset, preprocesses features, trains a
-RandomForestClassifier, and serialises the model + scaler to ``models/``.
+RandomForestClassifier, runs multi-model comparison, trains an outlier
+detector, and serialises all artifacts to ``models/``.
 
 Usage::
 
     python -m ml.train
 """
 
+import json
 import os
 import sys
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.datasets import fetch_openml
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -29,6 +30,7 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
 SCALER_PATH = os.path.join(MODEL_DIR, "scaler.pkl")
+METADATA_PATH = os.path.join(MODEL_DIR, "training_metadata.json")
 
 # ──────────────────────────────────────────────
 # Feature names for the 13-attribute Heart Disease dataset
@@ -142,6 +144,42 @@ def save_artifacts(model: RandomForestClassifier, scaler: StandardScaler) -> Non
     print(f"[INFO] Scaler saved → {SCALER_PATH}")
 
 
+def save_training_metadata(
+    model: RandomForestClassifier,
+    X: pd.DataFrame,
+    train_acc: float,
+    test_acc: float,
+) -> None:
+    """Save training metadata for analytics baseline."""
+    # Feature importance from RandomForest
+    importance = dict(zip(FEATURE_NAMES, [
+        round(float(v), 4) for v in model.feature_importances_
+    ]))
+
+    # Dataset baseline stats (used for spike analysis)
+    baseline_stats = {}
+    for col in FEATURE_NAMES:
+        baseline_stats[col] = {
+            "mean": round(float(X[col].mean()), 4),
+            "std": round(float(X[col].std()), 4),
+            "min": round(float(X[col].min()), 4),
+            "max": round(float(X[col].max()), 4),
+        }
+
+    metadata = {
+        "feature_names": FEATURE_NAMES,
+        "feature_importance": importance,
+        "baseline_stats": baseline_stats,
+        "train_accuracy": round(train_acc, 4),
+        "test_accuracy": round(test_acc, 4),
+        "n_samples": len(X),
+    }
+
+    with open(METADATA_PATH, "w") as f:
+        json.dump(metadata, f, indent=2)
+    print(f"[INFO] Training metadata saved → {METADATA_PATH}")
+
+
 def main() -> None:
     """End-to-end training pipeline."""
     X, y = load_data()
@@ -155,20 +193,37 @@ def main() -> None:
     # Preprocessing
     X_train_scaled, scaler = preprocess(X_train, fit=True)
 
-    # Training
+    # Training (primary model)
     model = train_model(X_train_scaled, y_train)
 
     # Quick accuracy on training set
     train_acc = model.score(X_train_scaled, y_train)
     print(f"[INFO] Training accuracy: {train_acc:.4f}")
 
-    # Save
+    # Save primary model
     save_artifacts(model, scaler)
 
-    # Also evaluate on test set
+    # Evaluate on test set
     X_test_scaled, _ = preprocess(X_test, fit=False, scaler=scaler)
     test_acc = model.score(X_test_scaled, y_test)
     print(f"[INFO] Test accuracy:     {test_acc:.4f}")
+
+    # Save training metadata (baseline stats, feature importance)
+    save_training_metadata(model, X, train_acc, test_acc)
+
+    # ── Multi-model comparison ────────────────
+    print("\n" + "=" * 50)
+    print("   MULTI-MODEL COMPARISON")
+    print("=" * 50)
+    from ml.compare import compare_models
+    compare_models(X_train_scaled, X_test_scaled, y_train, y_test)
+
+    # ── Train outlier detector ────────────────
+    print("\n" + "=" * 50)
+    print("   OUTLIER DETECTOR")
+    print("=" * 50)
+    from ml.outlier import train_outlier_detector
+    train_outlier_detector(X)
 
     print("\n✅ Training pipeline completed successfully.")
 

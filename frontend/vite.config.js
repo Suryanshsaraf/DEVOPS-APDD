@@ -13,6 +13,18 @@ export default defineConfig({
       '/health': {
         target: 'http://0.0.0.0:8000',
         changeOrigin: true
+      },
+      '/analytics': {
+        target: 'http://0.0.0.0:8000',
+        changeOrigin: true
+      },
+      '/model': {
+        target: 'http://0.0.0.0:8000',
+        changeOrigin: true
+      },
+      '/metrics': {
+        target: 'http://0.0.0.0:8000',
+        changeOrigin: true
       }
     }
   }

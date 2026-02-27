@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables / .env file."""
 
     # ── API Settings ──────────────────────────
-    APP_NAME: str = "ML Prediction API"
-    APP_VERSION: str = "1.0.0"
+    APP_NAME: str = "CardioAnalytics API"
+    APP_VERSION: str = "2.0.0"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
     DEBUG: bool = False
@@ -40,6 +40,10 @@ class Settings(BaseSettings):
 
     # ── Prometheus ────────────────────────────
     METRICS_ENABLED: bool = True
+
+    # ── Analytics ─────────────────────────────
+    SPIKE_WINDOW_SIZE: int = 20
+    SPIKE_THRESHOLD: float = 2.0
 
     class Config:
         env_file = ".env"

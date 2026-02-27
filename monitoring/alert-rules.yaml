@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────
-# Prometheus Alert Rules – ML Prediction API
+# Prometheus Alert Rules – CardioAnalytics API v2.0
 # ──────────────────────────────────────────────────
 
 groups:
@@ -78,3 +78,39 @@ groups:
           description: >
             The API has not processed any prediction requests in the last 30 minutes.
             This may indicate no traffic or a potential issue.
+
+      # ── High-Risk Spike Alert (NEW) ──────────
+      - alert: HighRiskSpike
+        expr: |
+          (
+            sum(rate(prediction_total{result="disease"}[5m]))
+            /
+            sum(rate(prediction_total[5m]))
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          service: ml-prediction-api
+        annotations:
+          summary: "High-risk prediction spike detected"
+          description: >
+            More than 80% of predictions in the last 5 minutes are high-risk.
+            This may indicate a data quality issue or a genuine health emergency pattern.
+
+      # ── Outlier Rate Alert (NEW) ──────────────
+      - alert: HighOutlierRate
+        expr: |
+          (
+            sum(rate(outlier_total[10m]))
+            /
+            sum(rate(prediction_total[10m]))
+          ) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          service: ml-prediction-api
+        annotations:
+          summary: "High outlier rate detected"
+          description: >
+            More than 20% of inputs are being flagged as outliers.
+            This may indicate data quality issues or distribution shift.

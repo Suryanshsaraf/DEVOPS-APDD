@@ -2,13 +2,15 @@
 Heart Disease Prediction – Model Evaluation.
 
 Loads the trained model and scaler, runs predictions on the test set,
-and prints a full classification report with confusion matrix.
+and produces a full evaluation report with classification metrics,
+confusion matrix, and ROC curve data.
 
 Usage::
 
     python -m ml.evaluate
 """
 
+import json
 import os
 
 import joblib
@@ -21,10 +23,14 @@ from sklearn.metrics import (
     f1_score,
     precision_score,
     recall_score,
+    roc_auc_score,
+    roc_curve,
 )
 from sklearn.model_selection import train_test_split
 
-from ml.train import FEATURE_NAMES, MODEL_PATH, SCALER_PATH, load_data, preprocess
+from ml.train import FEATURE_NAMES, MODEL_DIR, MODEL_PATH, SCALER_PATH, load_data, preprocess
+
+EVALUATION_REPORT_PATH = os.path.join(MODEL_DIR, "evaluation_report.json")
 
 
 def evaluate() -> dict:
@@ -55,7 +61,9 @@ def evaluate() -> dict:
     prec = precision_score(y_test, y_pred, zero_division=0)
     rec = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
+    auc = roc_auc_score(y_test, y_proba)
     cm = confusion_matrix(y_test, y_pred)
+    fpr, tpr, _ = roc_curve(y_test, y_proba)
 
     print("\n" + "=" * 50)
     print("       MODEL EVALUATION REPORT")
@@ -64,6 +72,7 @@ def evaluate() -> dict:
     print(f"  Precision : {prec:.4f}")
     print(f"  Recall    : {rec:.4f}")
     print(f"  F1-Score  : {f1:.4f}")
+    print(f"  ROC-AUC   : {auc:.4f}")
     print("-" * 50)
     print("  Confusion Matrix:")
     print(f"    TN={cm[0][0]}  FP={cm[0][1]}")
@@ -73,13 +82,25 @@ def evaluate() -> dict:
     print(classification_report(y_test, y_pred, target_names=["No Disease", "Disease"]))
     print("=" * 50)
 
-    return {
-        "accuracy": acc,
-        "precision": prec,
-        "recall": rec,
-        "f1_score": f1,
+    report = {
+        "accuracy": round(float(acc), 4),
+        "precision": round(float(prec), 4),
+        "recall": round(float(rec), 4),
+        "f1_score": round(float(f1), 4),
+        "roc_auc": round(float(auc), 4),
         "confusion_matrix": cm.tolist(),
+        "roc_curve": {
+            "fpr": [round(float(x), 4) for x in fpr[::max(1, len(fpr) // 50)]],
+            "tpr": [round(float(x), 4) for x in tpr[::max(1, len(tpr) // 50)]],
+        },
     }
+
+    # Persist report
+    with open(EVALUATION_REPORT_PATH, "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"[INFO] Evaluation report saved → {EVALUATION_REPORT_PATH}")
+
+    return report
 
 
 if __name__ == "__main__":

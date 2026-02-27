@@ -1,11 +1,17 @@
 """
 Pydantic Schemas for Request / Response Validation.
 
-Defines the input features for heart disease prediction and the API response models.
+Defines the input features for heart disease prediction and the API response
+models, including analytics, outlier, and SHAP contribution schemas.
 """
 
 from pydantic import BaseModel, Field
+from typing import Optional
 
+
+# ──────────────────────────────────────────────
+# Prediction Schemas
+# ──────────────────────────────────────────────
 
 class HeartDiseaseInput(BaseModel):
     """Input schema for heart disease prediction.
@@ -89,6 +95,16 @@ class PredictionResponse(BaseModel):
     probability: float = Field(
         ..., ge=0, le=1, description="Confidence probability"
     )
+    is_outlier: bool = Field(
+        default=False, description="Whether the input is an anomalous outlier"
+    )
+    anomaly_score: float = Field(
+        default=0.0, description="Outlier anomaly score (lower = more anomalous)"
+    )
+    feature_contributions: dict = Field(
+        default_factory=dict,
+        description="SHAP-based feature contribution values",
+    )
     status: str = Field(default="success")
 
 
@@ -98,3 +114,38 @@ class HealthResponse(BaseModel):
     status: str = Field(default="healthy")
     version: str
     model_loaded: bool
+
+
+# ──────────────────────────────────────────────
+# Analytics Schemas
+# ──────────────────────────────────────────────
+
+class AnalyticsStatsResponse(BaseModel):
+    """Real-time prediction statistics."""
+
+    total_predictions: int = 0
+    high_risk_count: int = 0
+    low_risk_count: int = 0
+    high_risk_rate: float = 0.0
+    average_confidence: float = 0.0
+    outlier_count: int = 0
+
+
+class SpikeDetectionResponse(BaseModel):
+    """Spike detection analysis result."""
+
+    spike_detected: bool = False
+    spike_score: float = 0.0
+    message: str = ""
+    recent_high_risk_rate: Optional[float] = None
+    baseline_high_risk_rate: Optional[float] = None
+    window_size: int = 0
+
+
+class SpikeAnalysisResponse(BaseModel):
+    """Feature-shift explanation for detected spikes."""
+
+    spike_detected: bool = False
+    explanation: str = ""
+    shifting_features: list = Field(default_factory=list)
+    spike_info: Optional[dict] = None
