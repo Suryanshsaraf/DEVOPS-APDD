@@ -50,45 +50,86 @@ APDD/
 │   ├── main.py                   # API endpoints (/health, /predict, /metrics)
 │   ├── config.py                 # Environment-based configuration
 │   ├── logger.py                 # Structured JSON logging
+│   ├── analytics.py              # Real-time analytics & model comparison
 │   └── schemas.py                # Pydantic request/response models
 │
 ├── ml/                           # Machine Learning Pipeline
 │   ├── __init__.py
 │   ├── train.py                  # Training pipeline (data → model.pkl)
 │   ├── evaluate.py               # Model evaluation & metrics report
-│   └── predict.py                # Prediction utility with lazy-load cache
+│   ├── predict.py                # Prediction utility with lazy-load cache
+│   ├── compare.py                # Multi-model comparison (RF, XGBoost, SVM)
+│   └── outlier.py                # Outlier / anomaly detection
 │
 ├── models/                       # Serialised model artifacts
-│   ├── model.pkl                 # Trained RandomForest model
+│   ├── model.pkl                 # Trained model
 │   └── scaler.pkl                # Fitted StandardScaler
 │
-├── tests/                        # Pytest test suite
+├── frontend/                     # React (Vite) Frontend
+│   ├── src/
+│   │   ├── App.jsx               # Main app with Predict + Dashboard tabs
+│   │   ├── components/           # UI components (HeartForm, ResultCard, etc.)
+│   │   └── index.css             # Global styling (glassmorphism, ECG bg)
+│   └── package.json
+│
+├── tests/                        # Test Suites
 │   ├── conftest.py               # Shared fixtures
-│   ├── test_api.py               # API endpoint tests (15 tests)
-│   └── test_model.py             # Model validation tests (10 tests)
+│   ├── test_api.py               # API endpoint tests
+│   ├── test_model.py             # Model validation tests
+│   ├── test_analytics.py         # Analytics engine tests
+│   └── selenium/                 # Selenium UI tests
+│       └── test_frontend.py      # Frontend form & dashboard tests
+│
+├── docs/                         # Documentation (syllabus-aligned)
+│   ├── sdlc/                     # Week 1 – Waterfall & Agile
+│   │   ├── waterfall-phases.md
+│   │   ├── agile-backlog.md
+│   │   ├── sprint-plans.md
+│   │   └── burndown-chart.md
+│   ├── scrum/                    # Week 2 – Scrum Framework
+│   │   ├── scrum-roles.md
+│   │   ├── sprint-backlog.md
+│   │   ├── sprint-review.md
+│   │   └── sprint-retrospective.md
+│   ├── git/                      # Week 3 – Version Control
+│   │   ├── branching-strategy.md
+│   │   └── tagging-strategy.md
+│   └── k8s/                      # Week 7–8 – Kubernetes
+│       └── rolling-update-strategy.md
+│
+├── ansible/                      # Week 9 – Configuration Management
+│   ├── inventory.ini             # Server inventory (web, CI, monitoring)
+│   └── playbook.yml              # Setup Docker, Jenkins, deploy container
 │
 ├── k8s/                          # Kubernetes manifests
-│   ├── deployment.yaml           # 3-replica Deployment
+│   ├── deployment.yaml           # 3-replica Deployment (envFrom ConfigMap/Secret)
 │   ├── service.yaml              # LoadBalancer Service
 │   ├── ingress.yaml              # NGINX Ingress
-│   └── hpa.yaml                  # Horizontal Pod Autoscaler
+│   ├── hpa.yaml                  # Horizontal Pod Autoscaler
+│   ├── configmap.yaml            # Non-sensitive environment config
+│   └── secret.yaml               # Sensitive values (base64-encoded)
 │
-├── terraform/                    # Infrastructure as Code (AWS)
-│   ├── main.tf                   # VPC, EKS, EC2, IAM, SGs
-│   ├── variables.tf              # Input variables
+├── terraform/                    # Infrastructure as Code (AWS – Modular)
+│   ├── main.tf                   # Root config (calls modules, S3 backend)
+│   ├── variables.tf              # Input variables (with validation)
 │   ├── outputs.tf                # Output values
-│   └── terraform.tfvars.example  # Example variable values
+│   ├── terraform.tfvars.example  # Example variable values
+│   └── modules/
+│       ├── network/              # VPC, subnets, IGW, NAT, routes
+│       ├── eks/                  # EKS cluster, node group, IAM
+│       └── jenkins/              # EC2 instance, security group
 │
 ├── monitoring/                   # Observability
 │   ├── prometheus.yaml           # Prometheus scrape configuration
 │   ├── grafana-dashboard.json    # Grafana dashboard (6 panels)
 │   └── alert-rules.yaml          # Prometheus alert rules
 │
-├── Dockerfile                    # Production container image
+├── Dockerfile                    # Multi-stage production image
 ├── docker-compose.yml            # Local dev stack (API + Prometheus + Grafana)
 ├── .dockerignore                 # Docker build exclusions
-├── Jenkinsfile                   # CI/CD pipeline (6 stages)
+├── Jenkinsfile                   # CI/CD pipeline (parallel tests, SonarQube, Selenium)
 ├── requirements.txt              # Python dependencies
+├── start-all.ps1                 # Start backend + frontend (Windows)
 ├── .env.example                  # Environment variable template
 ├── .gitignore                    # Git exclusions
 └── README.md                     # This file
@@ -206,25 +247,28 @@ ml-prediction-api:v1.0.0              # Semantic version for releases
 
 ## 🔄 CI/CD Pipeline (Jenkins)
 
-The `Jenkinsfile` defines a 6-stage declarative pipeline:
+The `Jenkinsfile` defines a declarative pipeline with parallel testing, code quality, and Selenium stages:
 
 ```
-┌──────────┐   ┌───────────┐   ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌──────────┐
-│ Checkout │──▶│  Install   │──▶│  Tests   │──▶│   Build   │──▶│   Push   │──▶│  Deploy  │
-│          │   │   Deps     │   │          │   │  Docker   │   │ DockerHub│   │  to K8s  │
-└──────────┘   └───────────┘   └──────────┘   └───────────┘   └──────────┘   └──────────┘
-                                                                                    │
-                                                                          On failure ▼
+┌──────────┐   ┌──────────┐   ┌─────────────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+│ Checkout │──▶│  Code    │──▶│  Tests (parallel)│──▶│  Build   │──▶│   Push   │──▶│  Deploy  │──▶│ Selenium │
+│          │   │ Quality  │   │ Unit │ Lint     │   │  Docker  │   │ DockerHub│   │  to K8s  │   │  Tests   │
+└──────────┘   │(SonarQube│   └──────┴─────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
+               │placeholder│                                                           │
+               └──────────┘                                                  On failure ▼
                                                                               ┌──────────┐
                                                                               │ Rollback │
                                                                               └──────────┘
 ```
 
 ### Key Features
-- **Automatic trigger** on GitHub push via webhook
-- **Credential management** via Jenkins Credentials store
+- **Parallel test execution** – Unit tests and lint checks run simultaneously
+- **Code quality** – SonarQube placeholder stage for static analysis
+- **Docker image tagging** – Tagged with `BUILD_NUMBER-GIT_SHA` for traceability
+- **Selenium tests** – Automated frontend testing post-deployment
 - **Auto-rollback** on deployment failure via `kubectl rollout undo`
-- **Build artifacts** cleaned up after pipeline execution
+- **Post-build cleanup** – Docker images pruned, workspace cleaned
+- **Console notifications** – Detailed success/failure build reports
 
 ### Jenkins Setup
 1. Install plugins: Pipeline, Git, Docker Pipeline

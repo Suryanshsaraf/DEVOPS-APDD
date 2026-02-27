@@ -1,0 +1,33 @@
+# ──────────────────────────────────────────────────
+# Kubernetes ConfigMap – ML Prediction API
+# ──────────────────────────────────────────────────
+# Non-sensitive configuration values for the application.
+# Referenced by the Deployment via envFrom.
+# ──────────────────────────────────────────────────
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-prediction-api-config
+  namespace: ml-production
+  labels:
+    app: ml-prediction-api
+    environment: production
+data:
+  # ── Application Settings ────────────────────────
+  APP_NAME: "ML Prediction API"
+  APP_VERSION: "1.1.0"
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "8000"
+
+  # ── Logging ─────────────────────────────────────
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+  # ── Feature Flags ──────────────────────────────
+  METRICS_ENABLED: "true"
+  DEBUG: "false"
+
+  # ── Model Settings ─────────────────────────────
+  MODEL_PATH: "/app/models/model.pkl"
+  SCALER_PATH: "/app/models/scaler.pkl"

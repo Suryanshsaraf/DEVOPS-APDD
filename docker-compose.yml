@@ -1,10 +1,11 @@
 # ──────────────────────────────────────────────────
-# Docker Compose – Local Development Stack
+# Docker Compose – Full Development Stack
 # ──────────────────────────────────────────────────
 # Services:
 #   1. ml-api        – FastAPI prediction service
 #   2. prometheus     – Metrics collection
 #   3. grafana        – Metrics dashboard
+#   4. jenkins        – CI/CD automation server
 # ──────────────────────────────────────────────────
 
 version: "3.9"
@@ -20,10 +21,11 @@ services:
       - "8000:8000"
     environment:
       - APP_NAME=ML Prediction API
-      - APP_VERSION=1.0.0
+      - APP_VERSION=1.1.0
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
       - DEBUG=false
+      - METRICS_ENABLED=true
     volumes:
       - ./models:/app/models
     healthcheck:
@@ -71,10 +73,27 @@ services:
     networks:
       - ml-network
 
+  # ── Jenkins CI/CD ──────────────────────────────
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - ml-network
+
 # ── Volumes ──────────────────────────────────────
 volumes:
   prometheus-data:
   grafana-data:
+  jenkins-data:
 
     # ── Networks ─────────────────────────────────────
 networks:

@@ -1,77 +1,129 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { FaExclamationTriangle, FaCheckCircle, FaRedo, FaRegHeart, FaHeart } from 'react-icons/fa';
 
 const ResultCard = ({ result, onReset }) => {
     const isDanger = result.hasDisease;
+    const pct = Math.round(result.probability * 100);
 
     return (
-        <div className={`glass-panel result-card animate-fade-in ${isDanger ? 'result-danger' : 'result-success'
-            }`} style={{ maxWidth: '700px', margin: '0 auto' }}>
-
-            <div className="result-icon">
+        <motion.div
+            className={`glass-panel result-card ${isDanger ? 'result-danger' : 'result-success'}`}
+            style={{ maxWidth: '700px', margin: '0 auto' }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+            {/* ── Animated Icon ───────── */}
+            <motion.div
+                className="result-icon"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 12 }}
+            >
                 {isDanger ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <FaHeart style={{ fontSize: '2.5rem' }} />
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <FaCheckCircle style={{ fontSize: '2.5rem' }} />
                 )}
-            </div>
+            </motion.div>
 
-            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{result.riskLevel}</h2>
+            {/* ── Risk Level ─────────── */}
+            <motion.h2
+                style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+            >
+                {result.riskLevel}
+            </motion.h2>
 
-            <div className="result-label">Confidence Score</div>
-            <div className="result-value">
-                {Math.round(result.probability * 100)}%
-            </div>
+            {/* ── Probability ────────── */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45 }}
+            >
+                <div className="result-label">Confidence Score</div>
+                <div className="result-value">{pct}%</div>
+            </motion.div>
 
+            {/* ── Outlier Alert ───────── */}
             {result.isOutlier && (
-                <div className="outlier-badge">
+                <motion.div
+                    className="outlier-badge"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.55 }}
+                >
                     ⚡ Outlier Detected
                     <span className="outlier-sub">This input deviates from typical patient data</span>
-                </div>
+                </motion.div>
             )}
 
-            <p className="text-main" style={{ fontSize: '1.125rem', lineHeight: '1.6', marginBottom: '1.5rem', opacity: 0.9 }}>
+            {/* ── Message ────────────── */}
+            <motion.p
+                className="text-main"
+                style={{ fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.5rem', color: 'var(--text-secondary)' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+            >
                 {result.message}
-            </p>
+            </motion.p>
 
-            {/* SHAP Feature Contributions */}
+            {/* ── Feature Contributions ─ */}
             {result.featureContributions && Object.keys(result.featureContributions).length > 0 && (
-                <div className="shap-section">
-                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                <motion.div
+                    className="shap-section"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                >
+                    <h4 style={{ marginBottom: '0.75rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
                         Key Contributing Factors
                     </h4>
                     <div className="shap-bars">
                         {Object.entries(result.featureContributions)
                             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
                             .slice(0, 5)
-                            .map(([name, value]) => (
-                                <div key={name} className="shap-bar-item">
+                            .map(([name, value], i) => (
+                                <motion.div
+                                    key={name}
+                                    className="shap-bar-item"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.7 + i * 0.08 }}
+                                >
                                     <span className="shap-name">{name}</span>
                                     <div className="shap-bar-container">
-                                        <div
+                                        <motion.div
                                             className={`shap-bar-fill ${value > 0 ? 'shap-positive' : 'shap-negative'}`}
-                                            style={{ width: `${Math.min(Math.abs(value) * 500, 100)}%` }}
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min(Math.abs(value) * 500, 100)}%` }}
+                                            transition={{ delay: 0.8 + i * 0.08, duration: 0.6, ease: 'easeOut' }}
                                         />
                                     </div>
                                     <span className={`shap-value ${value > 0 ? 'shap-pos-text' : 'shap-neg-text'}`}>
                                         {value > 0 ? '+' : ''}{value.toFixed(3)}
                                     </span>
-                                </div>
+                                </motion.div>
                             ))}
                     </div>
-                </div>
+                </motion.div>
             )}
 
-            <button onClick={onReset} className="btn-primary" style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', marginTop: '1rem' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+            {/* ── Reset Button ───────── */}
+            <motion.button
+                onClick={onReset}
+                className="btn-ghost"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+            >
+                <FaRedo />
                 Assess Another Patient
-            </button>
-        </div>
+            </motion.button>
+        </motion.div>
     );
 };
 

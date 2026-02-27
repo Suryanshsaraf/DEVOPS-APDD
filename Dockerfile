@@ -1,26 +1,46 @@
 # ──────────────────────────────────────────────────
-# ML Prediction API – Production Dockerfile
+# ML Prediction API – Multi-Stage Production Dockerfile
 # ──────────────────────────────────────────────────
-# Multi-stage-ready, slim base, non-root user,
-# layer-optimised, health-checked.
+# Stage 1 (builder): Install Python dependencies
+# Stage 2 (runtime): Copy only what's needed for a lean image
 # ──────────────────────────────────────────────────
 
-FROM python:3.11-slim AS base
+# ════════════════════════════════════════════════════
+# STAGE 1: Builder – install dependencies
+# ════════════════════════════════════════════════════
+FROM python:3.11-slim AS builder
+
+# Prevent bytecode + ensure unbuffered output
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /build
+
+# Install Python dependencies into a virtual env for easy copy
+COPY requirements.txt .
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# ════════════════════════════════════════════════════
+# STAGE 2: Runtime – lean production image
+# ════════════════════════════════════════════════════
+FROM python:3.11-slim AS runtime
 
 # ── Metadata ──────────────────────────────────────
 LABEL maintainer="sunil.saraf@example.com"
-LABEL description="Heart Disease Prediction API"
-LABEL version="1.0.0"
+LABEL description="Heart Disease Prediction API – Multi-Stage Build"
+LABEL version="1.1.0"
 
 # ── Environment ───────────────────────────────────
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
     APP_HOST=0.0.0.0 \
-    APP_PORT=8000
+    APP_PORT=8000 \
+    PATH="/opt/venv/bin:$PATH"
 
-# ── System dependencies ──────────────────────────
+# ── System dependencies (curl for healthcheck) ───
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
@@ -32,11 +52,10 @@ RUN groupadd --gid 1000 appuser && \
 # ── Working directory ─────────────────────────────
 WORKDIR /app
 
-# ── Install Python dependencies (layer cache) ────
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# ── Copy virtualenv from builder stage ────────────
+COPY --from=builder /opt/venv /opt/venv
 
-# ── Copy application code ────────────────────────
+# ── Copy application code only ───────────────────
 COPY app/ ./app/
 COPY ml/ ./ml/
 COPY models/ ./models/

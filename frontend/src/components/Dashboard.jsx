@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StatsCards from './StatsCards';
 import ModelComparison from './ModelComparison';
 import ConfusionMatrix from './ConfusionMatrix';
@@ -31,14 +32,11 @@ const Dashboard = () => {
                 fetch('/analytics/spikes'),
                 fetch('/analytics/spike-analysis'),
             ]);
-
             if (statsRes.ok) setStats(await statsRes.json());
             if (historyRes.ok) setHistory(await historyRes.json());
             if (spikeRes.ok) setSpikeData(await spikeRes.json());
             if (spikeAnalysisRes.ok) setSpikeAnalysis(await spikeAnalysisRes.json());
-        } catch (err) {
-            console.error('Dashboard fetch error:', err);
-        }
+        } catch (err) { console.error('Dashboard:', err); }
         setLoading(false);
     }, []);
 
@@ -49,81 +47,82 @@ const Dashboard = () => {
                 fetch('/model/feature-importance'),
             ]);
             if (perfRes.ok) setPerformance(await perfRes.json());
-            if (fiRes.ok) {
-                const data = await fiRes.json();
-                setFeatureImportance(data.features);
-            }
-        } catch (err) {
-            console.error('Model data fetch error:', err);
-        }
+            if (fiRes.ok) { const d = await fiRes.json(); setFeatureImportance(d.features); }
+        } catch (err) { console.error('Model data:', err); }
     }, []);
 
     useEffect(() => {
         fetchData();
         fetchModelData();
-        // Poll analytics every 5 seconds
         const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
     }, [fetchData, fetchModelData]);
 
     if (loading) {
         return (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-                <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px' }}></div>
-                <p className="text-muted">Loading Dashboard…</p>
-            </div>
+            <motion.div
+                className="glass-panel"
+                style={{ textAlign: 'center', padding: '4rem 2rem' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+            >
+                <div className="heart-loader">🫀</div>
+                <p className="text-muted" style={{ marginTop: '1rem' }}>Loading Dashboard…</p>
+            </motion.div>
         );
     }
 
+    const tabContent = {
+        overview: (
+            <motion.div className="dash-section" key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+                <StatsCards stats={stats} />
+                <SpikeAlert spikeData={spikeData} spikeAnalysis={spikeAnalysis} />
+                <PredictionTimeline history={history} />
+            </motion.div>
+        ),
+        models: (
+            <motion.div className="dash-section" key="models" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+                <div className="chart-row">
+                    <ModelComparison performance={performance} />
+                    <ROCCurve performance={performance} />
+                </div>
+                <div className="chart-row">
+                    <ConfusionMatrix performance={performance} />
+                    <FeatureImportance features={featureImportance} />
+                </div>
+            </motion.div>
+        ),
+        analytics: (
+            <motion.div className="dash-section" key="analytics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+                <StatsCards stats={stats} />
+                <div className="chart-row">
+                    <PredictionTimeline history={history} />
+                </div>
+                <SpikeAlert spikeData={spikeData} spikeAnalysis={spikeAnalysis} />
+                <FeatureImportance features={featureImportance} />
+            </motion.div>
+        ),
+    };
+
     return (
-        <div className="dashboard animate-fade-in">
-            {/* Dashboard Tabs */}
+        <div className="dashboard">
             <div className="dash-tabs">
                 {TABS.map(tab => (
-                    <button
+                    <motion.button
                         key={tab.id}
                         className={`dash-tab ${activeTab === tab.id ? 'active' : ''}`}
                         onClick={() => setActiveTab(tab.id)}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
                     >
                         {tab.label}
-                    </button>
+                    </motion.button>
                 ))}
             </div>
 
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-                <div className="dash-section">
-                    <StatsCards stats={stats} />
-                    <SpikeAlert spikeData={spikeData} spikeAnalysis={spikeAnalysis} />
-                    <PredictionTimeline history={history} />
-                </div>
-            )}
-
-            {/* Model Performance Tab */}
-            {activeTab === 'models' && (
-                <div className="dash-section">
-                    <div className="chart-row">
-                        <ModelComparison performance={performance} />
-                        <ROCCurve performance={performance} />
-                    </div>
-                    <div className="chart-row">
-                        <ConfusionMatrix performance={performance} />
-                        <FeatureImportance features={featureImportance} />
-                    </div>
-                </div>
-            )}
-
-            {/* Analytics Tab */}
-            {activeTab === 'analytics' && (
-                <div className="dash-section">
-                    <StatsCards stats={stats} />
-                    <div className="chart-row">
-                        <PredictionTimeline history={history} />
-                    </div>
-                    <SpikeAlert spikeData={spikeData} spikeAnalysis={spikeAnalysis} />
-                    <FeatureImportance features={featureImportance} />
-                </div>
-            )}
+            <AnimatePresence mode="wait">
+                {tabContent[activeTab]}
+            </AnimatePresence>
         </div>
     );
 };

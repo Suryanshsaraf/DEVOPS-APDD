@@ -1,0 +1,201 @@
+# ──────────────────────────────────────────────────
+# Ansible Playbook – CardioAnalytics Server Setup
+# ──────────────────────────────────────────────────
+# Idempotent playbook to:
+#   1. Install Docker on all servers
+#   2. Install Jenkins on CI servers
+#   3. Start required services
+#   4. Deploy the ML API container
+#
+# Usage:
+#   ansible-playbook -i inventory.ini playbook.yml
+# ──────────────────────────────────────────────────
+
+---
+# ════════════════════════════════════════════════════
+# Play 1: Common Setup – All Servers
+# ════════════════════════════════════════════════════
+- name: Common server setup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # ── System Updates ─────────────────────────────
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: [setup]
+
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-pip
+        state: present
+      tags: [setup]
+
+    # ── Docker Installation ───────────────────────
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      tags: [docker]
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+      tags: [docker]
+
+    - name: Install Docker Engine
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+      tags: [docker]
+
+    - name: Ensure Docker service is running and enabled
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+      tags: [docker]
+
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      tags: [docker]
+
+# ════════════════════════════════════════════════════
+# Play 2: Jenkins CI/CD Server Setup
+# ════════════════════════════════════════════════════
+- name: Jenkins server setup
+  hosts: ci_servers
+  become: true
+
+  tasks:
+    # ── Java (Jenkins dependency) ─────────────────
+    - name: Install Java 17 (Jenkins requirement)
+      apt:
+        name: fontconfig openjdk-17-jre
+        state: present
+      tags: [jenkins]
+
+    # ── Jenkins Installation ──────────────────────
+    - name: Add Jenkins GPG key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+      tags: [jenkins]
+
+    - name: Add Jenkins APT repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+      tags: [jenkins]
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+      tags: [jenkins]
+
+    - name: Ensure Jenkins service is running and enabled
+      systemd:
+        name: jenkins
+        state: started
+        enabled: true
+      tags: [jenkins]
+
+    - name: Add Jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+      notify: Restart Jenkins
+      tags: [jenkins]
+
+    # ── kubectl (for K8s deployment) ──────────────
+    - name: Download kubectl
+      get_url:
+        url: "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+      tags: [jenkins]
+
+  handlers:
+    - name: Restart Jenkins
+      systemd:
+        name: jenkins
+        state: restarted
+
+# ════════════════════════════════════════════════════
+# Play 3: Deploy ML API Container
+# ════════════════════════════════════════════════════
+- name: Deploy ML Prediction API
+  hosts: web_servers
+  become: true
+
+  tasks:
+    # ── Pull latest image ─────────────────────────
+    - name: Pull ML API Docker image
+      docker_image:
+        name: "{{ docker_image }}"
+        tag: "{{ docker_tag }}"
+        source: pull
+      tags: [deploy]
+
+    # ── Stop existing container (if any) ──────────
+    - name: Stop existing ML API container
+      docker_container:
+        name: ml-prediction-api
+        state: absent
+      tags: [deploy]
+
+    # ── Start new container ───────────────────────
+    - name: Run ML Prediction API container
+      docker_container:
+        name: ml-prediction-api
+        image: "{{ docker_image }}:{{ docker_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ app_port }}:8000"
+        env:
+          APP_NAME: "ML Prediction API"
+          LOG_LEVEL: "INFO"
+          METRICS_ENABLED: "true"
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+          interval: 30s
+          timeout: 5s
+          retries: 3
+          start_period: 10s
+      tags: [deploy]
+
+    # ── Verify deployment ─────────────────────────
+    - name: Wait for API to be healthy
+      uri:
+        url: "http://localhost:{{ app_port }}/health"
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 10
+      until: health_check.status == 200
+      tags: [deploy, verify]
+
+    - name: Print deployment status
+      debug:
+        msg: "✅ ML Prediction API is running on port {{ app_port }}"
+      tags: [deploy]
