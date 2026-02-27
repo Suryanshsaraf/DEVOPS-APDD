@@ -13,22 +13,22 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Docker Test') {
             steps {
-                echo "Building application..."
+                sh 'docker --version'
             }
         }
 
-        stage('Test') {
+        stage('Build Docker Image') {
             steps {
-                echo "Running tests..."
+                sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
     }
 
     post {
         success {
-            echo "Pipeline completed successfully!"
+            echo "Docker build successful!"
         }
         failure {
             echo "Pipeline failed."
