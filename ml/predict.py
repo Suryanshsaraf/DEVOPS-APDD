@@ -126,5 +126,8 @@ def is_model_loaded() -> bool:
     try:
         _load_artifacts()
         return True
-    except Exception:
+    except Exception as exc:
+        import traceback
+        print(f"[DEBUG] is_model_loaded failed: {exc}")
+        traceback.print_exc()
         return False

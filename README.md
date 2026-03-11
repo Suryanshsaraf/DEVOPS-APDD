@@ -44,7 +44,7 @@ A **production-grade, end-to-end Machine Learning deployment system** featuring 
 ## 📁 Project Structure
 
 ```
-APDD/
+DEVOPS-APDD/
 ├── app/                          # FastAPI Application
 │   ├── __init__.py
 │   ├── main.py                   # API endpoints (/health, /predict, /metrics)
@@ -152,8 +152,8 @@ APDD/
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/SaniyaGharat/CardioAnalytics-Platform.git
-cd CardioAnalytics-Platform
+git clone https://github.com/Suryanshsaraf/DEVOPS-APDD.git
+cd DEVOPS-APDD
 
 # Create virtual environment
 python -m venv venv
@@ -238,42 +238,33 @@ docker-compose up -d
 ### Image Tagging Strategy
 
 ```
-saniyagharat25/cardioanalytics:latest              # Latest build
-saniyagharat25/cardioanalytics:<build>-<sha7>      # Jenkins build: BUILD_NUMBER + short commit SHA
-saniyagharat25/cardioanalytics:v1.0.0              # Semantic version for releases
+saniyagharat25/cardioanalytics:latest              # Latest build tag pushed to DockerHub
+saniyagharat25/cardioanalytics:<build_number>      # Jenkins build tag based on BUILD_NUMBER
 ```
 
 ---
 
 ## 🔄 CI/CD Pipeline (Jenkins)
 
-The `Jenkinsfile` defines a declarative pipeline with parallel testing, code quality, and Selenium stages:
+The `Jenkinsfile` defines a declarative pipeline for continuous integration and continuous deployment:
 
 ```
-┌──────────┐   ┌──────────┐   ┌─────────────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│ Checkout │──▶│  Code    │──▶│  Tests (parallel)│──▶│  Build   │──▶│   Push   │──▶│  Deploy  │──▶│ Selenium │
-│          │   │ Quality  │   │ Unit │ Lint     │   │  Docker  │   │ DockerHub│   │  to K8s  │   │  Tests   │
-└──────────┘   │(SonarQube│   └──────┴─────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
-               │placeholder│                                                           │
-               └──────────┘                                                  On failure ▼
-                                                                              ┌──────────┐
-                                                                              │ Rollback │
-                                                                              └──────────┘
+┌──────────┐   ┌──────────────┐   ┌─────────────────┐   ┌──────────────────┐
+│ Checkout │──▶│ Build Docker │──▶│ Push DockerHub  │──▶│ Deploy to K8s    │
+│ (Source) │   │ Image        │   │                 │   │                  │
+└──────────┘   └──────────────┘   └─────────────────┘   └──────────────────┘
 ```
 
 ### Key Features
-- **Parallel test execution** – Unit tests and lint checks run simultaneously
-- **Code quality** – SonarQube placeholder stage for static analysis
-- **Docker image tagging** – Tagged with `BUILD_NUMBER-GIT_SHA` for traceability
-- **Selenium tests** – Automated frontend testing post-deployment
-- **Auto-rollback** on deployment failure via `kubectl rollout undo`
-- **Post-build cleanup** – Docker images pruned, workspace cleaned
+- **Docker image tagging** – Tagged with Jenkins `BUILD_NUMBER` for traceability
+- **Windows-friendly Execution** – Uses `bat` commands for local execution environments
+- **Automated Deployment** – Deploys manifests to Kubernetes and restarts deployment
 - **Console notifications** – Detailed success/failure build reports
 
 ### Jenkins Setup
 1. Install plugins: Pipeline, Git, Docker Pipeline
 2. Add credentials:
-   - `dockerhub-credentials` – DockerHub username/password
+   - `dockerhub` – DockerHub username/password
    - `kubeconfig` – Kubernetes cluster config file
 3. Create pipeline job pointing to `Jenkinsfile`
 4. Configure GitHub webhook → `http://<jenkins-url>/github-webhook/`
@@ -474,7 +465,7 @@ main ─────────────────────────
 ### Quick Start (Local)
 ```bash
 # 1. Clone and install
-git clone https://github.com/SaniyaGharat/CardioAnalytics-Platform.git && cd CardioAnalytics-Platform
+git clone https://github.com/Suryanshsaraf/DEVOPS-APDD.git && cd DEVOPS-APDD
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 

@@ -164,7 +164,30 @@ async def health_check():
     )
 
 
-@app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
+@app.get("/debug/model", tags=["System"])
+async def debug_model():
+    """Temporary debug endpoint to check model loading."""
+    import traceback
+    from ml.predict import _model, _load_artifacts
+    from ml.train import MODEL_PATH, SCALER_PATH
+    result = {
+        "model_path": MODEL_PATH,
+        "model_exists": os.path.exists(MODEL_PATH),
+        "scaler_path": SCALER_PATH,
+        "scaler_exists": os.path.exists(SCALER_PATH),
+        "model_cached": _model is not None,
+    }
+    try:
+        _load_artifacts()
+        result["load_success"] = True
+    except Exception as exc:
+        result["load_success"] = False
+        result["error"] = str(exc)
+        result["traceback"] = traceback.format_exc()
+    return result
+
+
+@app.post("/predict", response_model=PredictionResponse, tags=["Prediction"], responses={200: {"description": "Successful Response"}})
 async def make_prediction(payload: HeartDiseaseInput):
     """Run heart disease prediction with outlier detection and SHAP explanation."""
     logger.info("Prediction request received: %s", payload.model_dump())
