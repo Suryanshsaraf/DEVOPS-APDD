@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "saniyagharat25/cardioanalytics"
         TAG = "${BUILD_NUMBER}"
-        DOCKER_HOST = "tcp://127.0.0.1:2375"
+//        DOCKER_HOST = "tcp://127.0.0.1:2375"
     }
 
     stages {
@@ -18,7 +18,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME%:%TAG% .'
+                bat 'docker build --progress=plain -t %IMAGE_NAME%:%TAG% .'
             }
         }
 

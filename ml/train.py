@@ -129,7 +129,7 @@ def train_model(X_train: np.ndarray, y_train: pd.Series) -> RandomForestClassifi
         n_estimators=100,
         max_depth=10,
         random_state=42,
-        n_jobs=-1,
+        n_jobs=1,
     )
     model.fit(X_train, y_train)
     print("[INFO] Training complete.")

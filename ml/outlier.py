@@ -39,7 +39,7 @@ def train_outlier_detector(X: pd.DataFrame) -> IsolationForest:
         n_estimators=100,
         contamination=0.05,
         random_state=42,
-        n_jobs=-1,
+        n_jobs=1,
     )
     detector.fit(X)
     joblib.dump(detector, OUTLIER_DETECTOR_PATH)
