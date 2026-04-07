@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "cardioanalytics-local"
+        TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Using standard shell git clone because the Jenkins Git Plugin is not installed
+                sh '''
+                    if [ -d ".git" ]; then
+                        git pull origin main
+                    else
+                        git clone -b main https://github.com/Suryanshsaraf/DEVOPS-APDD.git .
+                    fi
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                // Using 'sh' instead of 'bat' to run on the Linux Jenkins container
+                sh 'docker build --progress=plain -t ${IMAGE_NAME}:${TAG} .'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build Successful 🎉'
+        }
+        failure {
+            echo 'Build Failed ❌'
+            echo 'Check the Console Output to see where the build failed.'
+        }
+    }
+}
