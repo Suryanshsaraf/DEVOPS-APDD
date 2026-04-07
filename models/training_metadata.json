@@ -15,16 +15,16 @@
     "thal"
   ],
   "feature_importance": {
-    "age": 0.1345,
-    "sex": 0.0246,
-    "cp": 0.0531,
-    "trestbps": 0.1245,
-    "chol": 0.1286,
+    "age": 0.1341,
+    "sex": 0.025,
+    "cp": 0.0528,
+    "trestbps": 0.1232,
+    "chol": 0.1291,
     "fbs": 0.023,
-    "restecg": 0.0416,
-    "thalach": 0.1474,
-    "exang": 0.0217,
-    "oldpeak": 0.1397,
+    "restecg": 0.0418,
+    "thalach": 0.1479,
+    "exang": 0.0223,
+    "oldpeak": 0.1395,
     "slope": 0.0543,
     "ca": 0.0596,
     "thal": 0.0475
@@ -110,6 +110,6 @@
     }
   },
   "train_accuracy": 1.0,
-  "test_accuracy": 0.5738,
+  "test_accuracy": 0.5902,
   "n_samples": 303
 }
