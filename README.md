@@ -499,16 +499,7 @@ open http://localhost:9090           # Prometheus
 open http://localhost:3000           # Grafana (admin/admin)
 ```
 
-### Screenshots
 
-> 📸 *Add screenshots here after running the demo:*
-> - Swagger UI with /predict endpoint
-> - Grafana dashboard with real-time metrics
-> - Jenkins pipeline execution
-> - Kubernetes pod status
-> - Terraform apply output
-
----
 
 ## 📄 License
 
